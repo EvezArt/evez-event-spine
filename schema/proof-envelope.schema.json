@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EvezArt/evez-event-spine/schema/proof-envelope.schema.json",
+  "title": "EVEZ ProofEnvelope",
+  "type": "object",
+  "required": ["actor", "target", "intent", "requested_effect", "authority"],
+  "properties": {
+    "actor": {"type": "string", "minLength": 1},
+    "target": {"type": "string", "minLength": 1},
+    "intent": {"type": "string", "minLength": 1},
+    "requested_effect": {"type": "string", "minLength": 1},
+    "authority": {
+      "enum": ["NONE", "OBSERVE", "SIMULATE", "MUTATE_REVERSIBLE", "MUTATE_IRREVERSIBLE", "HUMAN"]
+    },
+    "evidence_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "policy_version": {"type": "string", "minLength": 1},
+    "reversible": {"type": "boolean"},
+    "human_approval": {"type": "boolean"},
+    "witness_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "simulation": {"type": "boolean"},
+    "result": {}
+  },
+  "additionalProperties": false
+}
