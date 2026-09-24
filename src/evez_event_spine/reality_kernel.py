@@ -82,11 +82,7 @@ class ProofEnvelope:
             "result": self.result,
         }
         return json.dumps(
-            obj,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-            default=str,
+            obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str
         ).encode("utf-8")
 
     @property
@@ -145,47 +141,50 @@ class RealityKernel:
         return min(1.0, score)
 
     def gate(self, envelope: ProofEnvelope, claim: Claim | None = None) -> GateResult:
-        reasons: list[str] = []
+        hard_failures: list[str] = []
+        witness_requirements: list[str] = []
         score = self.drift_score(claim) if claim else 0.0
 
-        if envelope.simulation:
-            required = Authority.SIMULATE
-        elif envelope.reversible:
-            required = Authority.MUTATE_REVERSIBLE
-        else:
-            required = Authority.MUTATE_IRREVERSIBLE
+        required = (
+            Authority.SIMULATE
+            if envelope.simulation
+            else Authority.MUTATE_REVERSIBLE
+            if envelope.reversible
+            else Authority.MUTATE_IRREVERSIBLE
+        )
 
         if _AUTHORITY_RANK[envelope.authority] < _AUTHORITY_RANK[required]:
-            reasons.append(
+            hard_failures.append(
                 f"authority {envelope.authority.value} is below required {required.value}"
             )
 
         if not envelope.simulation and not envelope.evidence_refs:
-            reasons.append("consequential external action requires evidence_refs")
+            hard_failures.append("consequential external action requires evidence_refs")
 
         if not envelope.simulation and not envelope.reversible:
             if not envelope.human_approval:
-                reasons.append("irreversible action requires explicit human approval")
+                witness_requirements.append("irreversible action requires explicit human approval")
             if not envelope.witness_refs:
-                reasons.append("irreversible action requires witness_refs")
+                witness_requirements.append("irreversible action requires witness_refs")
 
         classified = self.classify_claim(claim) if claim else None
         if classified in {ClaimClass.HYPOTHESIS, ClaimClass.UNKNOWN} and not envelope.simulation:
-            reasons.append("uncertain claim cannot authorize external action")
+            hard_failures.append("uncertain claim cannot authorize external action")
 
         if score >= 0.80 and not envelope.simulation:
-            reasons.append("high-drift claim is contained from consequential action")
+            hard_failures.append("high-drift claim is contained from consequential action")
 
-        if not reasons:
-            decision = Decision.ALLOW
-        elif envelope.human_approval and envelope.witness_refs and not envelope.simulation:
+        reasons = tuple(hard_failures + witness_requirements)
+        if hard_failures:
+            decision = Decision.BLOCK
+        elif witness_requirements:
             decision = Decision.WITNESS_REQUIRED
         else:
-            decision = Decision.BLOCK
+            decision = Decision.ALLOW
 
         return GateResult(
             decision=decision,
-            reasons=tuple(reasons),
+            reasons=reasons,
             drift_score=score,
             envelope_hash=envelope.envelope_hash,
         )
@@ -194,7 +193,7 @@ class RealityKernel:
 def declared_effective_match(
     declared: Mapping[str, Any], effective: Mapping[str, Any]
 ) -> bool:
-    """Compare the fields that define authority and requested scope."""
+    """Compare fields that define authority and requested scope."""
     return all(
         declared.get(key) == effective.get(key)
         for key in ("authority", "requested_effect", "target")
