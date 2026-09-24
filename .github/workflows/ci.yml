@@ -19,6 +19,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]" || pip install -e .
       - name: Run tests
-        run: python -m pytest src/ -v --tb=short || echo "No tests found"
+        run: python -m pytest -v --tb=short
       - name: Syntax check
-        run: python -m py_compile src/**/*.py
+        run: python -m compileall -q src
