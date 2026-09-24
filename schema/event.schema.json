@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EVEZ Event Spine Event v1",
+  "type": "object",
+  "required": [
+    "version",
+    "seq",
+    "timestamp",
+    "actor",
+    "event_type",
+    "data",
+    "prev_hash",
+    "hash"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data": {},
+    "prev_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "additionalProperties": false
+}
